@@ -6,7 +6,7 @@ const { log } = require("../services/response.sv");
 
 module.exports = (role) => {
   return async (req, res, next) => {
-    const userId = req.query.userId;
+    const userId = req.user.userId;
     if (!userId) return res.status(400).json(log(false, message.USERID_REQ));
 
     const key = `${redisSlug.SET}:${userId}`;

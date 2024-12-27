@@ -3,12 +3,14 @@ exports.message = {
     SUCCESS: 'Success',
     FAILED: 'Failure',
     UNAUTH:  'You are not authorized!',
+    NOT_VERIFIED: 'Not an verified user!',
     ROLE_NOT_FOUND:  'Role not found!',
     USERID_REQ: 'User Id required in query',
     INVALID_DATE: "Invalid Date",
     NOT_ALLOWED_ORIGIN: "Origin not allowed",
     ORIGIN_NOT_FOUND:"Origin should be passed in headers",
     INTERNAL_ERROR: 'Internal Error!',
+    AUTH_HEADER: 'Authorization header required',
     EMP: {
         ADD: 'Successfully added an employee',
         UPDATE: 'Successfully updated an employee detail',
@@ -43,5 +45,9 @@ exports.message = {
         DELETE: 'Deleted redis data',
         UPDATE: 'Updated redis data',
         SET_ROLE: 'Role data exchanged'
+    },
+    SOCKET: {
+        UPDATE: 'Successfully employee details updated',
+        ROLE: 'Successfully employee role updated'
     }
 }

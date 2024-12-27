@@ -1,5 +1,5 @@
 const { roleDesc } = require("../../models/users.md");
-const { createdBy, updatePermission } = require("../../services/constants.sv");
+const { createdBy, updatePermission, redisSlug } = require("../../services/constants.sv");
 const { encodeUserId } = require("../../services/encode_decode.sv");
 const encryptService = require("../../services/encypt.sv");
 const { message } = require("../../services/messages.sv");
@@ -18,6 +18,7 @@ const {
 } = require("./employees.service");
 const { sendNotification } = require("../../services/notification.sv");
 const { getAggregated } = require("../../services/aggregator.sv");
+const { updateDataRedis } = require("../../services/redis.sv");
 
 exports.addEmp = async (req, res) => {
   try {
@@ -76,9 +77,8 @@ exports.addEmp = async (req, res) => {
 
 exports.updateEmp = async (req, res) => {
   try {
-    const { empId, emailId, contactNo, empName, dept, doj, role, password } =
-      req.body;
-    const userId = req.query?.userId;
+    const { empId, doj } = req.body;
+    const userId = req.user.userId;
     if (userId == empId) return res.json(log(false, message.EMP.NOT_SELF));
     if (doj) {
       const checkDate = doj && !moment(doj).isValid();
@@ -89,9 +89,7 @@ exports.updateEmp = async (req, res) => {
 
     const getEmpRole = checkExist.data.role;
     const getEmpDept = checkExist.data.dept;
-    const checkUser = await checkUserRole(userId);
-    if (!checkUser.success) return res.json(log(false, checkUser.reason));
-    const getUserRole = checkUser.role;
+    const getUserRole = req.user.role;
 
     const permissible = updatePermission[roleDesc[getUserRole]];
     const isPermissible = permissible.includes(getEmpRole);
@@ -99,23 +97,16 @@ exports.updateEmp = async (req, res) => {
       return res.json(log(false, message.EMP.NOT_PERMISSIBLE));
 
     //User: Manager role
-    if (roleDesc[2] == roleDesc[getUserRole]) {
+    const checkMgr = roleDesc[2] == roleDesc[getUserRole];
+    if (checkMgr) {
       const checkDept = (await checkMgrDept(userId)).dept;
 
       if (checkDept != getEmpDept)
         return res.json(log(false, message.EMP.DEPT_NOT_MATCHED));
-
-      const updateEmpData = await updateOne({
-        model: "EmpEMS",
-        query: { userId: userId },
-        data: {},
-      });
-      sendNotification(userId, "checked");
-    } else {
-      return res.json(true);
     }
-
-    return res.json({});
+    const updateData = await updateFilteredData(checkMgr, req.body);
+    if (updateData.success) return res.json(log(true, message.EMP.UPDATE));
+    return res.json(log(false, updateData.reason));
   } catch (err) {
     error(err);
   }
@@ -170,8 +161,51 @@ exports.getEmpList = async (req, res) => {
   try {
     const { page, limit } = req.body;
     const getData = await getAggregated(page, limit);
-    return res.json(log(true, message.EMP.GETALL, getData))
+    return res.json(log(true, message.EMP.GETALL, getData));
   } catch (err) {
     error(err);
   }
+};
+
+const updateFilteredData = async (isMgr, obj) => {
+  const empId = obj?.empId;
+  delete obj.empId;
+
+  const filteredObj = Object.fromEntries(
+    Object.entries(obj).filter(
+      ([key, val]) => val != undefined && key != "role"
+    )
+  );
+
+  const updateEmpData = await updateOne({
+    model: "EmpEMS",
+    query: { userId: empId },
+    data: filteredObj,
+  });
+
+  let isRoleUpdated;
+  if (!isMgr) {
+    const updateUserData = await updateOne({
+      model: "UserEMS",
+      query: { userId: empId },
+      data: { role: obj.role },
+    });
+
+    isRoleUpdated = updateUserData?.modifiedCount == 1;
+  }
+  const isUpdated = updateEmpData?.modifiedCount == 1;
+  if (!isUpdated) return { success: false, reason: message.FAILED };
+  else if (isUpdated && isMgr) {
+    sendNotification(empId, message.SOCKET.UPDATE);
+    return { success: true };
+  } else if (isUpdated && !isMgr && isRoleUpdated) {
+    const redisObj = {
+      key: `${redisSlug.SET}:${empId}`,
+      value: { role: obj.role},
+      expire: 900
+    };
+    await updateDataRedis(redisObj)
+    sendNotification(empId, message.SOCKET.ROLE);
+    return { success: true };
+  } else return { success: false, reason: message.INTERNAL_ERROR };
 };

@@ -47,20 +47,6 @@ module.exports = {
       error(err);
     }
   },
-
-  checkUserRole: async (userId) => {
-    try {
-      if (!userId) return { success: false, reason: "userId required" };
-      const setKey = { key: `${redisSlug.SET}:${userId}` };
-      const getRole = await getDataRedis(setKey);
-
-      if (getRole?.role) return { success: true, role: getRole.role };
-      return { success: false, reason: message.INTERNAL_ERROR };
-    } catch (err) {
-      error(err);
-    }
-  },
-
   checkMgrDept: async (userId) => {
     try {
       if (!userId) return { success: false, reason: "userId required" };

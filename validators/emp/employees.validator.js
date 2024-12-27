@@ -13,7 +13,6 @@ exports.addEmp = Joi.object({
 });
 
 exports.updateEmp = Joi.object({
-    userId: Joi.string().required(),
     empId: Joi.string().required(),
     emailId: Joi.string().pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/).optional(),
     empName: Joi.string().min(3).max(20).optional(),
@@ -24,6 +23,5 @@ exports.updateEmp = Joi.object({
 });
 
 exports.getEmp = Joi.object({
-    userId: Joi.string().required(),
     empId: Joi.string().required(),
 });

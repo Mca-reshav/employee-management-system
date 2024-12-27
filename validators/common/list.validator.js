@@ -6,13 +6,11 @@ const fileType = Object.freeze({
 });
 
 exports.getEmpList = Joi.object({
-  userId: Joi.string().required(),
   page: Joi.number().optional(),
   limit: Joi.number().optional()
 });
 
 exports.getEmpListToDownload = Joi.object({
-  userId: Joi.string().required(),
   page: Joi.number().optional(),
   limit: Joi.number().optional(),
   fileType: Joi.string()

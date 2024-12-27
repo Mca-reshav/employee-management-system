@@ -1,8 +1,8 @@
 const encryptService = require("../../services/encypt.sv");
+const { generateJwt } = require("../../services/jwt.sv");
 const { message } = require("../../services/messages.sv");
-const { create, find } = require("../../services/mongo.sv");
-const { error, log, success } = require("../../services/response.sv")
-const moment = require('moment');
+const { find } = require("../../services/mongo.sv");
+const { error, log, success, tokenLog } = require("../../services/response.sv")
 
 exports.login = async (req, res) => {
     try {
@@ -27,8 +27,10 @@ exports.login = async (req, res) => {
         if (!checkPwd) {
             return res.json(log(false, message.USER.WRONG_PASSWORD, {}))
         }
-        success(true, message.USER.LOGGED_IN, {});
-        return res.json(log(true, message.USER.LOGGED_IN, {role: getData[0].role, userId}))
+        const getToken = await generateJwt({userId, role:getData[0].role})
+        tokenLog(getToken.token)
+        success(true, message.USER.LOGGED_IN);
+        return res.json(log(true, message.USER.LOGGED_IN))
     } catch (err) {
         error(err)
     }

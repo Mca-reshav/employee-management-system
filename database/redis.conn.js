@@ -12,7 +12,6 @@ exports.client = redis.createClient({
 })();
 
 this.client.on("error", function (e) {
-  success(false, "REDIS")
   error(e);
 });
 

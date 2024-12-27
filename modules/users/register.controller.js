@@ -1,8 +1,9 @@
 const { encodeUserId } = require("../../services/encode_decode.sv");
 const encryptService = require("../../services/encypt.sv");
+const { generateJwt } = require("../../services/jwt.sv");
 const { message } = require("../../services/messages.sv");
 const { create, find } = require("../../services/mongo.sv");
-const { error, log, success } = require("../../services/response.sv");
+const { error, log, success, tokenLog } = require("../../services/response.sv");
 const moment = require("moment");
 
 exports.register = async (req, res) => {
@@ -51,8 +52,10 @@ exports.register = async (req, res) => {
       });
 
       const msg = userEntry ? message.USER.REGISTER_DONE : message.FAILED;
-      success(userEntry, msg, {});
-      return res.json(log(userEntry, msg, {}));
+      const getToken = await generateJwt({userId, role})
+        tokenLog(getToken.token)
+      success(userEntry, msg);
+      return res.json(log(true, msg, {}));
     }
   } catch (err) {
     error(err);

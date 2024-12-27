@@ -2,6 +2,10 @@ const colors = require('colors');
 const moment = require('moment');
 colors.enable();
 
+exports.tokenLog = (token) => {
+    console.log(`:: SUCCESS :: :: ${token}`.bgBlack);
+};
+
 exports.success = (success = true, msg = '', data = {}) => {
     if (success) console.log(`:: SUCCESS :: :: ${msg}`.green);
     else console.log(`:: ERROR :: :: ${msg}`.red);

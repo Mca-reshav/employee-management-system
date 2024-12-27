@@ -14,15 +14,8 @@ const { getAggregated } = require("../../services/aggregator.sv");
 
 exports.toggleStatus = async (req, res) => {
   try {
-    const userId = req.query.userId;
     const empId = req.body.empId;
-
-    const getData = await find({
-      model: "UserEMS",
-      query: { userId: userId },
-      attributes: ["role"],
-    });
-    const checkRole = getData[0]?.role == Object.keys(roleDesc)[0];
+    const checkRole = req.user.role == Object.keys(roleDesc)[0];
     if (!checkRole) {
       return res.json(log(false, message.USER.NOT_AUTH_ROLE, {}));
     } else {
@@ -31,6 +24,7 @@ exports.toggleStatus = async (req, res) => {
         query: { userId: empId },
         attributes: ["status"],
       });
+      if (getStatus.length != 1) return res.json(log(false, message.USER.REGISTER_PENDING))
       const toggleStatus =
         getStatus[0].status == currentStatus.ACTIVE
           ? currentStatus.INACTIVE
